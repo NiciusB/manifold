@@ -14,11 +14,12 @@ import { slugify } from 'common/util/slugify'
 import { getUser } from 'shared/utils'
 import { z } from 'zod'
 import { APIError, authEndpoint, validate } from './helpers'
+import { contentSchema } from 'shared/zod-types'
 
 const bodySchema = z.object({
   name: z.string().min(1).max(MAX_GROUP_NAME_LENGTH),
   memberIds: z.array(z.string().min(1).max(MAX_ID_LENGTH)),
-  about: z.string().min(1).max(MAX_ABOUT_LENGTH).optional(),
+  about: contentSchema.or(z.string().min(1).max(MAX_ABOUT_LENGTH)).optional(),
   privacyStatus: z.string().min(1).optional(),
 })
 

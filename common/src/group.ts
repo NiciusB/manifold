@@ -1,17 +1,17 @@
 import { partition, sortBy } from 'lodash'
 import { Contract } from './contract'
+import { JSONContent } from '@tiptap/core'
 
 export type Group = {
   id: string
   slug: string
   name: string
-  about: string
+  about?: string | JSONContent
   creatorId: string // User id
   createdTime: number
   anyoneCanJoin?: boolean
   totalContracts: number
   totalMembers: number
-  aboutPostId?: string
   postIds: string[]
   mostRecentContractAddedTime?: number
   cachedLeaderboard?: {
