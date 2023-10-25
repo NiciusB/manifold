@@ -13,5 +13,9 @@
 13. Run `docker-compose exec manifold sh docker/firebase-create-secrets.sh`
 14. Download https://drive.google.com/drive/folders/1C_EuERO9KlQEH9hg9aCMjcKYvL39kTrU and copy `firestore_export` folder to `backend/functions/firestore_export`
 15. Run `docker-compose exec manifold yarn --cwd=backend/functions build`
-16. On the original terminal tab, stop `./run.sh` (Ctrl+c), and run it again
-17. All done! On your browser, you can now open http://localhost:3000/. It'll take a while to load the first time. You should see a log `[NEXT] - wait compiling / (client and server)...` on the terminal
+16. Create a firebase project
+17. Set the values `supabaseInstanceId` and `supabaseAnonKey` for `common/src/envs/dev.ts`
+18. Set the following secret in Google Cloud: `SUPABASE_PASSWORD`
+19. (TODO: something here to actually prepare supabase db) Run `docker-compose exec manifold yarn cross-env GOOGLE_APPLICATION_CREDENTIALS_DEV=/home/node/app/docker/dev-firebase-credentials.json yarn --cwd backend/scripts ts-node supabase-import.ts`
+20. You can now close the extra tab. On the original terminal tab, stop `./run.sh` (Ctrl+c), and run it again
+21. All done! On your browser, you can now open http://localhost:3000/. It'll take a while to load the first time. You should see a log `[NEXT] - wait compiling / (client and server)...` on the terminal
