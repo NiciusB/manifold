@@ -10,12 +10,17 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000" # Next.js
-      - "9005:9005" # Firebase login callback
-      - "4000:4000" # Firebase Emulator UI
-      - "5001:5001" # Firebase Functions
-      - "8080:8080" # Firebase Firestore
-      - "8088:8088" # Firebase Firestore
-      - "8085:8085" # Firebase PubSub
+      - "8088:8088" # Functions (Backend API)
+      - "4000:4000"	# Firebase: Emulator Suite UI
+      #- "5000:5000"	# Firebase: Firebase Hosting
+      - "5001:5001"	# Firebase: Cloud Functions
+      - "8080:8080"	# Firebase: Cloud Firestore
+      - "8085:8085"	# Firebase: Cloud Pub/Sub
+      - "9000:9000"	# Firebase: Realtime Database
+      - "9005:9005"	# Firebase: Firebase Login
+      - "9099:9099"	# Firebase: Authentication
+      - "9150:9150" # Firebase: Some websocket for Emulator Suite UI
+      - "9199:9199"	# Firebase: Cloud Storage
     volumes:
       - ../:/home/node/app
       - .config:/root/.config

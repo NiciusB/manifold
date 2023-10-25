@@ -124,7 +124,7 @@ const apiErrorHandler: ErrorRequestHandler = (err, _req, res, next) => {
     }
     res.status(err.code).json(output)
   } else {
-    console.error(err.stack)
+    console.error(err)
     res.status(500).json({ message: 'An unknown error occurred.' })
   }
 }
