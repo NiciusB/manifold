@@ -2,6 +2,6 @@
   "projects": {
     "default": "mantic-markets",
     "prod": "mantic-markets",
-    "dev": "dev-mantic-markets"
+    "dev": "manifold-test-27be7"
   }
 }

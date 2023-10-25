@@ -31,6 +31,7 @@ export const getFirebaseActiveProject = (cwd: string) => {
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
     return config['activeProjects'][projectRoot]
   } catch (e) {
+    console.error(e)
     return null
   }
 }

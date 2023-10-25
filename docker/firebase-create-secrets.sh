@@ -1,0 +1,15 @@
+echo "" | firebase functions:secrets:set API_SECRET
+echo "" | firebase functions:secrets:set DREAM_KEY
+echo "" | firebase functions:secrets:set MAILGUN_KEY
+echo "" | firebase functions:secrets:set OPENAI_API_KEY
+echo "" | firebase functions:secrets:set STRIPE_APIKEY
+echo "" | firebase functions:secrets:set STRIPE_WEBHOOKSECRET
+echo "" | firebase functions:secrets:set SUPABASE_KEY
+echo "" | firebase functions:secrets:set SUPABASE_JWT_SECRET
+echo "" | firebase functions:secrets:set SUPABASE_PASSWORD
+echo "" | firebase functions:secrets:set TEST_CREATE_USER_KEY
+echo "" | firebase functions:secrets:set NEWS_API_KEY
+echo "" | firebase functions:secrets:set REACT_APP_GIPHY_KEY
+echo "" | firebase functions:secrets:set TWITTER_API_KEY_JSON
+echo "" | firebase functions:secrets:set DESTINY_API_KEY
+echo "" | firebase functions:secrets:set FB_ACCESS_TOKEN

@@ -1,0 +1,29 @@
+version: '3.9'
+
+name: manifold
+
+services:
+  manifold:
+    build:
+      context: .
+      dockerfile: manifold.Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:3000" # Next.js
+      - "9005:9005" # Firebase login callback
+      - "4000:4000" # Firebase Emulator UI
+      - "5001:5001" # Firebase Functions
+      - "8080:8080" # Firebase Firestore
+      - "8088:8088" # Firebase Firestore
+      - "8085:8085" # Firebase PubSub
+    volumes:
+      - ../:/home/node/app
+      - .config:/root/.config
+    networks:
+      - app-network
+    working_dir: /home/node/app
+    command: sh /home/node/app/docker/docker-dev.sh
+
+networks:
+  app-network:
+    driver: bridge
