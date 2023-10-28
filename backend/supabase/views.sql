@@ -49,7 +49,7 @@ create or replace view
     select
       ce1.contract_id as id1,
       ce2.contract_id as id2,
-      ce1.embedding <= > ce2.embedding as distance
+      ce1.embedding <=> ce2.embedding as distance
     from
       contract_embeddings ce1
       cross join contract_embeddings ce2
@@ -76,7 +76,7 @@ create or replace view
     select
       user_id,
       contract_id,
-      user_embeddings.interest_embedding <= > contract_embeddings.embedding as distance
+      user_embeddings.interest_embedding <=> contract_embeddings.embedding as distance
     from
       user_embeddings
       cross join contract_embeddings
@@ -99,6 +99,31 @@ create or replace view
     order by
       popularity_score desc
   );
+
+create or replace view
+    groups_rbac as
+select
+    *
+from
+    groups
+where
+        groups.privacy_status <> 'private'
+   or (
+    (
+        exists (
+            select
+                1
+            from
+                group_members
+            where
+                (
+                        (group_members.group_id = groups.id)
+                        and (group_members.member_id = firebase_uid ())
+                    )
+        )
+        )
+    )
+   or (is_admin (firebase_uid ()));
 
 drop view if exists group_role;
 
@@ -163,31 +188,6 @@ where
       can_access_private_contract (contracts.id, firebase_uid ())
     )
   );
-
-create or replace view
-  groups_rbac as
-select
-  *
-from
-  groups
-where
-  groups.privacy_status <> 'private'
-  or (
-    (
-      exists (
-        select
-          1
-        from
-          group_members
-        where
-          (
-            (group_members.group_id = groups.id)
-            and (group_members.member_id = firebase_uid ())
-          )
-      )
-    )
-  )
-  or (is_admin (firebase_uid ()));
 
 create view
   user_referrals as

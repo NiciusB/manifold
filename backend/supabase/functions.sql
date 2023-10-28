@@ -1,7 +1,4 @@
-create
-or replace function jsonb_array_to_text_array (_js jsonb) returns text[] language sql immutable strict parallel safe as $$
-select array(select jsonb_array_elements_text(_js))
-$$;
+
 
 create
 or replace function recently_liked_contract_counts (since bigint) returns table (contract_id text, n int) stable parallel safe language sql as $$
@@ -11,39 +8,6 @@ from user_reactions
 where data->>'contentType' = 'contract'
   and data->>'createdTime' > since::text
 group by contract_id $$;
-
-create
-or replace function get_cpmm_pool_prob (pool jsonb, p numeric) returns numeric language plpgsql immutable parallel safe as $$
-declare p_no numeric := (pool->>'NO')::numeric;
-p_yes numeric := (pool->>'YES')::numeric;
-no_weight numeric := p * p_no;
-yes_weight numeric := (1 - p) * p_yes + p * p_no;
-begin return case
-  when yes_weight = 0 then 1
-  else (no_weight / yes_weight)
-end;
-end $$;
-
-create
-or replace function ts_to_millis (ts timestamptz) returns bigint language sql immutable parallel safe as $$
-select (
-    extract(
-      epoch
-      from ts
-    ) * 1000
-  )::bigint $$;
-
-create
-or replace function millis_to_ts (millis bigint) returns timestamptz language sql immutable parallel safe as $$
-select to_timestamp(millis / 1000.0) $$;
-
-create
-or replace function millis_interval (start_millis bigint, end_millis bigint) returns interval language sql immutable parallel safe as $$
-select millis_to_ts(end_millis) - millis_to_ts(start_millis) $$;
-
-create
-or replace function get_time () returns bigint language sql stable parallel safe as $$
-select ts_to_millis(now()) $$;
 
 create
 or replace function is_valid_contract (ct contracts) returns boolean stable parallel safe as $$
@@ -497,14 +461,6 @@ values (
 $$;
 
 create
-or replace function firebase_uid () returns text language sql stable parallel safe as $$
-select nullif(
-    current_setting('request.jwt.claims', true)::json->>'sub',
-    ''
-  )::text;
-$$;
-
-create
 or replace function get_reply_chain_comments_matching_contracts (contract_ids text[], past_time_ms bigint) returns table (id text, contract_id text, data JSONB) as $$
   WITH matching_comments AS (
       SELECT
@@ -573,51 +529,10 @@ order by greatest(
     similarity(query, name),
     similarity(query, username)
   ) desc,
-  coalesce(data->'creatorTraders'->'allTime',0) desc nulls last
+  coalesce((data->'creatorTraders'->'allTime')::float,0) desc nulls last
 limit count $$ language sql stable;
 
 
-create
-or replace function extract_text_from_rich_text_json (description jsonb) returns text language sql immutable as $$
-WITH RECURSIVE content_elements AS (
-  SELECT jsonb_array_elements(description->'content') AS element
-  WHERE jsonb_typeof(description) = 'object'
-  UNION ALL
-  SELECT jsonb_array_elements(element->'content')
-  FROM content_elements
-  WHERE element->>'type' = 'paragraph' AND element->'content' IS NOT NULL
-),
-               text_elements AS (
-                 SELECT jsonb_array_elements(element->'content') AS text_element
-                 FROM content_elements
-                 WHERE element->>'type' = 'paragraph'
-               ),
-               filtered_text_elements AS (
-                 SELECT text_element
-                 FROM text_elements
-                 WHERE jsonb_typeof(text_element) = 'object' AND text_element->>'type' = 'text'
-               ),
-               all_text_elements AS (
-                 SELECT filtered_text_elements.text_element->>'text' AS text
-                 FROM filtered_text_elements
-               )
-SELECT
-  CASE
-    WHEN jsonb_typeof(description) = 'string' THEN description::text
-    ELSE COALESCE(string_agg(all_text_elements.text, ' '), '')
-    END
-FROM
-  all_text_elements;
-$$;
-
-create
-or replace function add_creator_name_to_description (data jsonb) returns text language sql immutable as $$
-select * from CONCAT_WS(
-        ' '::text,
-        data->>'creatorName',
-        extract_text_from_rich_text_json(data->'description')
-  )
-$$;
 
 create
 or replace function get_prefix_match_query (p_query text) returns text as $$

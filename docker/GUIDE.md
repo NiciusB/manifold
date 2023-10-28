@@ -13,7 +13,7 @@
 13. Run `docker-compose exec manifold sh docker/firebase-create-secrets.sh`
 14. Download https://drive.google.com/drive/folders/1C_EuERO9KlQEH9hg9aCMjcKYvL39kTrU and copy `firestore_export` folder to `backend/functions/firestore_export`
 15. Run `docker-compose exec manifold yarn --cwd=backend/functions build`
-16. Create a firebase project
+16. Create a Supabase project and database. Enable the following extensions on it: vector, pg_trgm, and pg_repack. TODO: pg_repack shows some error permission on Supabase's UI?
 17. Set the values `supabaseInstanceId` and `supabaseAnonKey` for `common/src/envs/dev.ts`
 18. Set the following secret in Google Cloud: `SUPABASE_PASSWORD`
 19. (TODO: something here to actually prepare supabase db) Run `docker-compose exec manifold yarn cross-env GOOGLE_APPLICATION_CREDENTIALS_DEV=/home/node/app/docker/dev-firebase-credentials.json yarn --cwd backend/scripts ts-node init-supabase-db.ts`

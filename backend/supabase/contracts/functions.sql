@@ -1,15 +1,4 @@
 create
-or replace function can_access_private_contract (this_contract_id text, this_member_id text) returns boolean parallel SAFE language sql as $$
-  SELECT EXISTS (
-    SELECT 1 WHERE is_private_contract_member(this_contract_id, this_member_id)
-
-    UNION
-
-    SELECT 1 WHERE is_admin(this_member_id)
-  ) 
-$$;
-
-create
 or replace function is_private_contract_member (this_contract_id text, this_member_id text) returns boolean parallel SAFE language sql as $$
   SELECT EXISTS (
     SELECT 1
@@ -18,6 +7,17 @@ or replace function is_private_contract_member (this_contract_id text, this_memb
     WHERE group_contracts.contract_id = this_contract_id
       AND group_members.member_id = this_member_id
   ) 
+$$;
+
+create
+    or replace function can_access_private_contract (this_contract_id text, this_member_id text) returns boolean parallel SAFE language sql as $$
+SELECT EXISTS (
+    SELECT 1 WHERE is_private_contract_member(this_contract_id, this_member_id)
+
+    UNION
+
+    SELECT 1 WHERE is_admin(this_member_id)
+)
 $$;
 
 create

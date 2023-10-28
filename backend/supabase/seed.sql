@@ -9,17 +9,19 @@ alter role service_role
 set
   statement_timeout = '1h';
 
+
+-- Disabled extension creation due to permission issues. On Supabase, they should be enabled manually on the UI
 /* for clustering without locks */
-create extension if not exists pg_repack;
+-- create extension if not exists pg_repack;
 
 /* for fancy machine learning stuff */
-create extension if not exists vector;
+-- create extension if not exists vector;
 
 /* GIN trigram indexes */
-create extension if not exists pg_trgm;
+-- create extension if not exists pg_trgm;
 
 /* for UUID generation */
-create extension if not exists pgcrypto;
+-- create extension if not exists pgcrypto;
 
 /* enable `explain` via the HTTP API for convenience */
 alter role authenticator
@@ -29,12 +31,109 @@ set
 notify pgrst,
 'reload config';
 
+/******************************************/
+/* 0. basic functions                     */
+/******************************************/
+
 /* create a version of to_jsonb marked immutable so that we can index over it.
 see https://github.com/PostgREST/postgrest/issues/2594 */
 create
-or replace function to_jsonb(jsonb) returns jsonb immutable parallel safe strict language sql as $$
+    or replace function to_jsonb(jsonb) returns jsonb immutable parallel safe strict language sql as $$
 select $1
 $$;
+
+create
+    or replace function extract_text_from_rich_text_json (description jsonb) returns text language sql immutable as $$
+WITH RECURSIVE content_elements AS (
+    SELECT jsonb_array_elements(description->'content') AS element
+    WHERE jsonb_typeof(description) = 'object'
+    UNION ALL
+    SELECT jsonb_array_elements(element->'content')
+    FROM content_elements
+    WHERE element->>'type' = 'paragraph' AND element->'content' IS NOT NULL
+),
+               text_elements AS (
+                   SELECT jsonb_array_elements(element->'content') AS text_element
+                   FROM content_elements
+                   WHERE element->>'type' = 'paragraph'
+               ),
+               filtered_text_elements AS (
+                   SELECT text_element
+                   FROM text_elements
+                   WHERE jsonb_typeof(text_element) = 'object' AND text_element->>'type' = 'text'
+               ),
+               all_text_elements AS (
+                   SELECT filtered_text_elements.text_element->>'text' AS text
+                   FROM filtered_text_elements
+               )
+SELECT
+    CASE
+        WHEN jsonb_typeof(description) = 'string' THEN description::text
+        ELSE COALESCE(string_agg(all_text_elements.text, ' '), '')
+        END
+FROM
+    all_text_elements;
+$$;
+
+create
+    or replace function add_creator_name_to_description (data jsonb) returns text language sql immutable as $$
+select * from CONCAT_WS(
+        ' '::text,
+        data->>'creatorName',
+        extract_text_from_rich_text_json(data->'description')
+    )
+$$;
+
+create
+    or replace function to_jsonb(jsonb) returns jsonb immutable parallel safe strict language sql as $$
+select $1
+$$;
+
+create
+    or replace function firebase_uid () returns text language sql stable parallel safe as $$
+select nullif(
+                   current_setting('request.jwt.claims', true)::json->>'sub',
+                   ''
+           )::text;
+$$;
+
+create
+    or replace function jsonb_array_to_text_array (_js jsonb) returns text[] language sql immutable strict parallel safe as $$
+select array(select jsonb_array_elements_text(_js))
+$$;
+
+create
+    or replace function get_cpmm_pool_prob (pool jsonb, p numeric) returns numeric language plpgsql immutable parallel safe as $$
+declare p_no numeric := (pool->>'NO')::numeric;
+        p_yes numeric := (pool->>'YES')::numeric;
+        no_weight numeric := p * p_no;
+        yes_weight numeric := (1 - p) * p_yes + p * p_no;
+begin return case
+                 when yes_weight = 0 then 1
+                 else (no_weight / yes_weight)
+    end;
+end $$;
+
+create
+    or replace function ts_to_millis (ts timestamptz) returns bigint language sql immutable parallel safe as $$
+select (
+               extract(
+                       epoch
+                       from ts
+                   ) * 1000
+           )::bigint $$;
+
+create
+    or replace function millis_to_ts (millis bigint) returns timestamptz language sql immutable parallel safe as $$
+select to_timestamp(millis / 1000.0) $$;
+
+create
+    or replace function millis_interval (start_millis bigint, end_millis bigint) returns interval language sql immutable parallel safe as $$
+select millis_to_ts(end_millis) - millis_to_ts(start_millis) $$;
+
+create
+    or replace function get_time () returns bigint language sql stable parallel safe as $$
+select ts_to_millis(now()) $$;
 
 /******************************************/
 /* 1. tables containing firestore content */
@@ -43,7 +142,7 @@ $$;
 create table if not exists private_users (
   id text not null primary key,
   data jsonb not null,
-  fs_updated_time timestamp not null,
+  fs_updated_time timestamp not null
 );
 
 alter table private_users enable row level security;
@@ -327,6 +426,25 @@ create index if not exists user_feed_user_id_contract_id_created_time on user_fe
 alter table user_feed
 cluster on user_feed_created_time;
 
+create text search dictionary english_stem_nostop (template = snowball, language = english);
+
+create text search dictionary english_prefix (template = simple);
+
+create text search configuration public.english_nostop_with_prefix (
+    copy = english
+    );
+
+alter text search configuration public.english_nostop_with_prefix
+    alter mapping for asciiword,
+          asciihword,
+          hword_asciipart,
+          hword,
+          hword_part,
+          word
+              with
+              english_stem_nostop,
+        english_prefix;
+
 create table if not exists
   contracts (
     id text not null primary key,
@@ -402,8 +520,8 @@ create index contracts_last_updated_time on contracts(((data ->> 'lastUpdatedTim
 create index contracts_group_slugs_public on contracts using gin((data -> 'groupSlugs'))
     where visibility = 'public';
 
-create index concurrently idx_lover_user_id1 on contracts ((data ->> 'loverUserId1')) where data->>'loverUserId1' is not null;
-create index concurrently idx_lover_user_id2 on contracts ((data ->> 'loverUserId2')) where data->>'loverUserId2' is not null;
+create index idx_lover_user_id1 on contracts ((data ->> 'loverUserId1')) where data->>'loverUserId1' is not null;
+create index idx_lover_user_id2 on contracts ((data ->> 'loverUserId2')) where data->>'loverUserId2' is not null;
 
 
 alter table contracts
@@ -589,7 +707,7 @@ create table if not exists
     primary key (contract_id, comment_id),
     visibility text,
     user_id text,
-    created_time timestamptz,
+    created_time timestamptz
   );
 
 alter table contract_comments enable row level security;
@@ -1048,7 +1166,7 @@ create table if not exists
     funds numeric not null,
     cost_per_view numeric not null,
     created_at timestamp not null default now(),
-    embedding vector (1536) not null,
+    embedding vector (1536) not null
   );
 
 alter table market_ads enable row level security;
@@ -1206,43 +1324,6 @@ create policy "public read" on portfolios for
 select
   using (true);
 
-begin;
-
-drop publication if exists supabase_realtime;
-
-create publication supabase_realtime;
-
-alter publication supabase_realtime
-add table contracts;
-
-alter publication supabase_realtime
-add table contract_bets;
-
-alter publication supabase_realtime
-add table contract_comments;
-
-alter publication supabase_realtime
-add table post_comments;
-
-alter publication supabase_realtime
-add table group_contracts;
-
-alter publication supabase_realtime
-add table group_members;
-
-alter publication supabase_realtime
-add table user_notifications;
-
-alter publication supabase_realtime
-add table user_contract_metrics;
-
-alter publication supabase_realtime
-add table user_follows;
-
-alter publication supabase_realtime
-add table private_user_message_channel_members;
-
-commit;
 
 /* 2. internal machinery for making firestore replication work */
 /* records all incoming writes to any logged firestore document */
@@ -1497,25 +1578,6 @@ drop trigger if exists replicate_writes on incoming_writes;
 create trigger replicate_writes
 after insert on incoming_writes referencing new table as new_table for each statement
 execute function replicate_writes_process_new ();
-
-create text search dictionary english_stem_nostop (template = snowball, language = english);
-
-create text search dictionary english_prefix (template = simple);
-
-create text search configuration public.english_nostop_with_prefix (
-  copy = english
-);
-
-alter text search configuration public.english_nostop_with_prefix
-alter mapping for asciiword,
-asciihword,
-hword_asciipart,
-hword,
-hword_part,
-word
-with
-  english_stem_nostop,
-  english_prefix;
 
 create table if not exists
   news (

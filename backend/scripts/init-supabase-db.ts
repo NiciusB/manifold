@@ -1,10 +1,12 @@
 import {getLocalEnv, initAdmin} from 'shared/init-admin'
 initAdmin()
-import { createSupabaseDirectClient} from 'shared/supabase/init'
+import {createSupabaseDirectClient, pgp} from 'shared/supabase/init'
 import {getServiceAccountCredentials, loadSecretsToEnv} from 'common/secrets'
 import * as path from 'path'
 import * as fg from 'fast-glob'
 import * as fs from 'fs'
+import {getInstanceHostname} from "common/supabase/utils";
+import {DEV_CONFIG} from "common/envs/dev";
 
 const main = async () => {
     // Get SQL scripts to execute and order them
@@ -13,19 +15,43 @@ const main = async () => {
     ])
     sqlFiles
         .sort((a, b) => {
-            if (a.endsWith('supabase/seed.sql')) {
-                return -1
-            }
-            if (b.endsWith('supabase/seed.sql')) {
-                return 1
+            // Sort by priority
+            const orderedPriorityFiles = [
+                'supabase/debug-reset-schema.sql',
+                'supabase/seed.sql',
+                'supabase/helper_functions/is_admin.sql',
+                'supabase/group_members/create.sql',
+                'supabase/group_contracts.sql',
+                'supabase/users/create.sql',
+                'supabase/contracts/functions.sql'
+            ]
+            for (const file of orderedPriorityFiles) {
+                if (a.endsWith(file)) {
+                    return -1
+                }
+                if (b.endsWith(file)) {
+                    return 1
+                }
             }
 
+            // Sort by shorter
+            const diff = a.length - b.length
+            if (diff != 0) {
+                return diff
+            }
+
+            // sort alphabetically
             return a < b ? -1 : 1
         })
 
     // Connect to Supabase db
     await loadSecretsToEnv(getServiceAccountCredentials(getLocalEnv()))
-    const db = createSupabaseDirectClient()
+    const db = pgp({
+        host: `db.${getInstanceHostname(DEV_CONFIG.supabaseInstanceId)}`,
+        port: 5432,
+        user: 'postgres',
+        password: process.env.SUPABASE_PASSWORD,
+    })
 
     // Execute sql scripts in order
     for (const sqlPath of sqlFiles) {
@@ -34,7 +60,7 @@ const main = async () => {
         const sql = fs.readFileSync(sqlPath).toString('utf-8')
 
         // run sql
-        await db.query(sql)
+        await db.none(sql)
     }
 }
 

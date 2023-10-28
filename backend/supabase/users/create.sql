@@ -5,7 +5,7 @@ create table if not exists
     fs_updated_time timestamp not null,
     name text not null,
     username text not null,
-    name_username_vector tsvector generated always as (to_tsvector(name || ' ' || username)) stored
+    name_username_vector tsvector generated always as (to_tsvector('english', name || ' ' || username)) stored
   );
 
 alter table users
