@@ -5,9 +5,17 @@ import {getServiceAccountCredentials, loadSecretsToEnv} from 'common/secrets'
 import * as path from 'path'
 import * as fg from 'fast-glob'
 import * as fs from 'fs'
+import * as readline from 'node:readline/promises'
 
 const main = async () => {
-    throw new Error('This script will wipe the supabase db. Remove this line and run again if you are really sure')
+    const wantedResponse = "I am become death destroyer of worlds"
+    const response = await readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+    }).question(`This script will wipe the supabase db. If you really want to continue type this: ${wantedResponse}:\n`)
+    if (response != wantedResponse) {
+        throw new Error(`You typed the wrong thing: (${response}) VS (${wantedResponse})`)
+    }
 
     // Get SQL scripts to execute and order them
     const sqlFiles = await fg.async([
@@ -36,6 +44,14 @@ const main = async () => {
                 if (b.endsWith(file)) {
                     return 1
                 }
+            }
+
+            // Execute seed_data.sql last
+            if (a.endsWith('supabase/seed_data.sql')) {
+                return 1
+            }
+            if (b.endsWith('supabase/seed_data.sql')) {
+                return -1
             }
 
             // Give any create.sql priority
