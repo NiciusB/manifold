@@ -1,15 +1,3 @@
-alter table posts
-add column visibility text;
-
-alter table posts
-add column group_id text;
-
-alter table posts
-add column creator_id text;
-
-alter table posts
-add column created_time timestamptz;
-
 create
 or replace function post_populate_cols () returns trigger language plpgsql as $$ begin 
     if new.data is not null then 

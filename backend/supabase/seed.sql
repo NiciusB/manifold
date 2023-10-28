@@ -944,7 +944,8 @@ create table if not exists
   manalinks (
     id text not null primary key,
     data jsonb not null,
-    fs_updated_time timestamp not null
+    fs_updated_time timestamp not null,
+    from_id text
   );
 
 alter table manalinks

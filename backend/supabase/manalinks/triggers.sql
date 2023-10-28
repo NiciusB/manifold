@@ -1,6 +1,3 @@
-alter table manalinks
-add column from_id text;
-
 create
 or replace function manalink_populate_cols () returns trigger language plpgsql as $$ begin 
     if new.data is not null then 

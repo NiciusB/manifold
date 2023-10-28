@@ -15,15 +15,19 @@ const main = async () => {
     ])
     sqlFiles
         .sort((a, b) => {
-            // Sort by priority
+            // Manual priority to kickstart stuff
             const orderedPriorityFiles = [
                 'supabase/debug-reset-schema.sql',
                 'supabase/seed.sql',
                 'supabase/helper_functions/is_admin.sql',
+                'supabase/helper_functions/random_alphanumeric.sql',
                 'supabase/group_members/create.sql',
                 'supabase/group_contracts.sql',
                 'supabase/users/create.sql',
-                'supabase/contracts/functions.sql'
+                'supabase/contracts/functions.sql',
+                'supabase/views.sql',
+                'supabase/functions.sql',
+                'supabase/private-user-messages.sql',
             ]
             for (const file of orderedPriorityFiles) {
                 if (a.endsWith(file)) {
@@ -34,13 +38,21 @@ const main = async () => {
                 }
             }
 
-            // Sort by shorter
+            // Give any create.sql priority
+            if (a.endsWith('create.sql')) {
+                return -1
+            }
+            if (b.endsWith('create.sql')) {
+                return 1
+            }
+
+            // Shorter, the logic is that longer filenames depend on more stuff
             const diff = a.length - b.length
             if (diff != 0) {
                 return diff
             }
 
-            // sort alphabetically
+            // Sort alphabetically, not really important but just to keep consistency
             return a < b ? -1 : 1
         })
 
