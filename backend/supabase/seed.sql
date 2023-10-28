@@ -1,7 +1,5 @@
 -- noinspection SqlNoDataSourceInspectionForFile
-/ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * /
 /* 0. database-wide configuration */
-/ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * /
 /* allow our backend and CLI users to have a long statement timeout */
 alter role postgres
 set
@@ -1246,9 +1244,7 @@ add table private_user_message_channel_members;
 
 commit;
 
-/ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * /
 /* 2. internal machinery for making firestore replication work */
-/ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * /
 /* records all incoming writes to any logged firestore document */
 create table if not exists
   incoming_writes (

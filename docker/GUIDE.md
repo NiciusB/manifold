@@ -1,4 +1,4 @@
-1. If you're on Apple Silicon, Make sure to give Docker at least 8GB, ideally 12GB
+1. Install docker. If you're on Apple Silicon, Make sure to go to the Docker Desktop settings and give Docker at least 8GB, ideally 12GB
 2. Open terminal, and navigate to this `docker` folder
 3. Run `./run.sh`
 4. Wait until it finishes, it'll say some error about firebase
@@ -16,6 +16,6 @@
 16. Create a firebase project
 17. Set the values `supabaseInstanceId` and `supabaseAnonKey` for `common/src/envs/dev.ts`
 18. Set the following secret in Google Cloud: `SUPABASE_PASSWORD`
-19. (TODO: something here to actually prepare supabase db) Run `docker-compose exec manifold yarn cross-env GOOGLE_APPLICATION_CREDENTIALS_DEV=/home/node/app/docker/dev-firebase-credentials.json yarn --cwd backend/scripts ts-node supabase-import.ts`
+19. (TODO: something here to actually prepare supabase db) Run `docker-compose exec manifold yarn cross-env GOOGLE_APPLICATION_CREDENTIALS_DEV=/home/node/app/docker/dev-firebase-credentials.json yarn --cwd backend/scripts ts-node init-supabase-db.ts`
 20. You can now close the extra tab. On the original terminal tab, stop `./run.sh` (Ctrl+c), and run it again
 21. All done! On your browser, you can now open http://localhost:3000/. It'll take a while to load the first time. You should see a log `[NEXT] - wait compiling / (client and server)...` on the terminal
