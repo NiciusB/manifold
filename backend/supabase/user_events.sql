@@ -15,9 +15,10 @@ alter table user_events enable row level security;
 
 drop policy if exists "self and admin read" on user_events;
 
-create policy "self and admin read" on user_events for
-    select
-    with check (user_id = firebase_uid() or is_admin(firebase_uid()));
+-- TODO: Re-enable once figured out: https://discord.com/channels/915138780216823849/959728429295616061/1167928748490891396
+--create policy "self and admin read" on user_events for
+--    select
+--    with check (user_id = firebase_uid() or is_admin(firebase_uid()));
 
 -- mqp: we should fix this up so that users can only insert their own events.
 -- but right now it's blocked because our application code is too dumb to wait
