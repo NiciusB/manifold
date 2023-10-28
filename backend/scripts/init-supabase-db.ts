@@ -1,14 +1,14 @@
 import {getLocalEnv, initAdmin} from 'shared/init-admin'
 initAdmin()
-import {createSupabaseDirectClient, pgp} from 'shared/supabase/init'
+import {createSupabaseDirectClient} from 'shared/supabase/init'
 import {getServiceAccountCredentials, loadSecretsToEnv} from 'common/secrets'
 import * as path from 'path'
 import * as fg from 'fast-glob'
 import * as fs from 'fs'
-import {getInstanceHostname} from "common/supabase/utils";
-import {DEV_CONFIG} from "common/envs/dev";
 
 const main = async () => {
+    throw new Error('This script will wipe the supabase db. Remove this line and run again if you are really sure')
+
     // Get SQL scripts to execute and order them
     const sqlFiles = await fg.async([
         path.join(__dirname, '..', 'supabase/**/*.sql'),
@@ -58,12 +58,7 @@ const main = async () => {
 
     // Connect to Supabase db
     await loadSecretsToEnv(getServiceAccountCredentials(getLocalEnv()))
-    const db = pgp({
-        host: `db.${getInstanceHostname(DEV_CONFIG.supabaseInstanceId)}`,
-        port: 5432,
-        user: 'postgres',
-        password: process.env.SUPABASE_PASSWORD,
-    })
+    const db = createSupabaseDirectClient()
 
     // Execute sql scripts in order
     for (const sqlPath of sqlFiles) {
