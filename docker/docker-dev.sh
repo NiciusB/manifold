@@ -10,13 +10,10 @@ firebase use $FIREBASE_PROJECT
 gcloud config set project $GCLOUD_PROJECT_ID
 
 npx concurrently \
-    -n FIRESTORE,FUNCTIONS,NEXT,NEXT_TS_WATCH \
+    -n API,NEXT,NEXT_TS \
     -c green,white,magenta,cyan \
-    "yarn --cwd=backend/functions localDbScript" \
-    "cross-env FIRESTORE_EMULATOR_HOST=0.0.0.0:8080 \
-               yarn --cwd=backend/api dev" \
+    "yarn --cwd=backend/api dev" \
     "cross-env NEXT_PUBLIC_API_URL=http://localhost:8088 \
-             NEXT_PUBLIC_FIREBASE_EMULATE=TRUE \
              NEXT_PUBLIC_FIREBASE_ENV=${NEXT_ENV} \
              yarn --cwd=web serve" \
     "yarn --cwd=web ts-watch"

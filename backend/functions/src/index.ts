@@ -1,12 +1,6 @@
 import * as admin from 'firebase-admin'
-import {initAdmin} from "shared/init-admin";
 
-const LOCAL_DEV = process.env.GOOGLE_CLOUD_PROJECT == null
-if (LOCAL_DEV) {
-  initAdmin()
-} else {
-  admin.initializeApp()
-}
+admin.initializeApp()
 
 // triggers
 export * from './triggers/log-writes' // Running the emulator? Comment this line out
